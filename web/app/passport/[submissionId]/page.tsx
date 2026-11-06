@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -27,7 +27,7 @@ const VERDICT_COLOR: Record<string, string> = {
   UNVERIFIABLE: "bg-slate-600",
 };
 
-export default function PassportPage() {
+function PassportContent() {
   const params = useParams();
   const router = useRouter();
   const submissionId = params?.submissionId as string;
@@ -144,5 +144,13 @@ export default function PassportPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PassportPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0b1220]" />}>
+      <PassportContent />
+    </Suspense>
   );
 }
