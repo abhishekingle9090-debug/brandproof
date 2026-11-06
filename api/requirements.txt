@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+sqlalchemy[asyncio]
+asyncpg
+pgvector
+firebase-admin
+pydantic-settings
+openai
+pymupdf
+python-multipart
+httpx
+pytesseract
+pillow
