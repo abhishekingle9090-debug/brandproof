@@ -23,6 +23,13 @@ const VERDICT_COLOR: Record<string, string> = {
   UNVERIFIABLE: "bg-slate-600",
 };
 
+const STEPS = [
+  "Retrieving approved guidelines...",
+  "Running rule engine...",
+  "Analysing with AI...",
+  "Validating citations...",
+];
+
 export default function SubmitPage() {
   const router = useRouter();
   const [content, setContent] = useState(
@@ -31,6 +38,7 @@ export default function SubmitPage() {
   const [findings, setFindings] = useState<Finding[]>([]);
   const [submissionId, setSubmissionId] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
   const [error, setError] = useState("");
   const [ready, setReady] = useState(false);
 
@@ -45,14 +53,23 @@ export default function SubmitPage() {
     setLoading(true);
     setError("");
     setFindings([]);
+    setCurrentStep(0);
+
+    // Fake progress animation
+    const interval = setInterval(() => {
+      setCurrentStep((s) => Math.min(s + 1, STEPS.length - 1));
+    }, 1200);
+
     try {
       const data = await submitContent(content);
       setFindings(data.findings);
       setSubmissionId(data.submission_id);
     } catch (e: any) {
       setError(e.message);
+    } finally {
+      clearInterval(interval);
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   if (!ready) return <div className="min-h-screen bg-[#0b1220]" />;
@@ -88,6 +105,33 @@ export default function SubmitPage() {
           {loading ? "Analysing..." : "Submit for review"}
         </button>
 
+        {loading && (
+          <div className="mt-6 p-5 border border-[#1f2a3f] rounded bg-[#0f172a]">
+            {STEPS.map((step, i) => (
+              <div key={i} className="flex items-center gap-3 mb-2 last:mb-0">
+                <span
+                  className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
+                    i < currentStep
+                      ? "bg-green-600 text-white"
+                      : i === currentStep
+                      ? "bg-[#2563eb] text-white animate-pulse"
+                      : "bg-[#1f2a3f] text-[#64748b]"
+                  }`}
+                >
+                  {i < currentStep ? "✓" : i + 1}
+                </span>
+                <span
+                  className={
+                    i <= currentStep ? "text-[#f5f3ee]" : "text-[#64748b]"
+                  }
+                >
+                  {step}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {error && <p className="mt-4 text-red-400">{error}</p>}
 
         {findings.length > 0 && (
@@ -108,7 +152,7 @@ export default function SubmitPage() {
 
             <div className="space-y-3">
               {findings.map((f) => (
-                <div key={f.id} className="p-5 border border-[#1f2a3f] rounded bg-[#0f172a]">
+                <div key={f.id} className="p-5 border border-[#1f2a3f] rounded bg-[#0f172a] animate-[fadeIn_0.3s_ease-in]">
                   <div className="flex items-center gap-3 mb-2">
                     <span
                       className={`px-3 py-1 rounded text-xs font-bold uppercase ${

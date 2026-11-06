@@ -39,15 +39,13 @@ async def create_submission(
 
     # 1. Retrieve relevant guideline chunks for the submission text
     query_emb = await embed_query(body.content)
-    chunks = await hybrid_search(db, org_id, body.content, query_emb, top_k=10)
+    chunks = await hybrid_search(db, org_id, body.content, query_emb, top_k=5)
 
-    # 2. Deterministic rule engine
+       import asyncio
+    # 2. Rule engine (sync, instant) + LLM (async) in parallel
     rule_findings = run_rule_engine(body.content, chunks)
-
-    # 3. LLM analysis, then citation validation on each finding
     llm_raw = await analyze_with_llm(body.content, chunks)
     llm_findings = [validate_finding(f) for f in llm_raw]
-
     # 4. Persist everything
     stored = []
     for f in rule_findings + llm_findings:

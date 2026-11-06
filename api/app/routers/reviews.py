@@ -114,3 +114,45 @@ async def passport(
     sub.passport = passport_data
     await db.commit()
     return passport_data
+@router.get("/drift")
+async def drift_radar(
+    user: FirebaseUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    from sqlalchemy import text as sql_text
+
+    most_violated = (await db.execute(sql_text("""
+        SELECT COALESCE(rule_id, verdict) AS key, COUNT(*) AS c
+        FROM findings
+        GROUP BY rule_id, verdict
+        ORDER BY c DESC
+        LIMIT 10
+    """))).all()
+
+    expired_total = (await db.execute(sql_text(
+        "SELECT COUNT(*) FROM findings WHERE verdict = 'EXPIRED'"
+    ))).scalar()
+
+    overrides = (await db.execute(sql_text(
+        "SELECT COUNT(*) FROM findings WHERE decision = 'approved' "
+        "AND verdict IN ('EXPIRED', 'CONTRADICTED')"
+    ))).scalar()
+
+    total_findings = (await db.execute(sql_text(
+        "SELECT COUNT(*) FROM findings"
+    ))).scalar()
+
+    return {
+        "most_violated_rules": [
+            {"rule": r[0], "count": r[1]} for r in most_violated
+        ],
+        "expired_claims_total": expired_total,
+        "reviewer_overrides_total": overrides,
+        "total_findings": total_findings,
+        "insight": (
+            f"Top violated rule: {most_violated[0][0]} ({most_violated[0][1]} times). "
+            "Consider adding a template or clearer example."
+            if most_violated else
+            "Not enough data yet. Submit more content to reveal patterns."
+        ),
+    }
