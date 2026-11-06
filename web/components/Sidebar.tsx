@@ -9,7 +9,6 @@ const NAV = [
   { href: "/submit", label: "Submit", icon: "✎" },
   { href: "/review", label: "Review Queue", icon: "☑" },
   { href: "/drift", label: "Drift Radar", icon: "◉" },
-  { href: "/audit", label: "Audit Log", icon: "≡" },
 ];
 
 export default function Sidebar() {
