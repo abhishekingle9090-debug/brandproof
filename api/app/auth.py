@@ -1,3 +1,5 @@
+import json
+
 import firebase_admin
 from firebase_admin import auth as fb_auth
 from firebase_admin import credentials
@@ -7,7 +9,11 @@ from pydantic import BaseModel
 
 from .config import settings
 
-cred = credentials.Certificate(settings.firebase_credentials_path)
+if settings.firebase_credentials_json:
+    cred = credentials.Certificate(json.loads(settings.firebase_credentials_json))
+else:
+    cred = credentials.Certificate(settings.firebase_credentials_path)
+
 firebase_admin.initialize_app(cred)
 
 bearer = HTTPBearer()
