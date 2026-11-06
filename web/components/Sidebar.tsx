@@ -6,13 +6,13 @@ import { auth } from "@/lib/firebase";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: "▦" },
+  { href: "/guidelines", label: "Guidelines", icon: "📄" },
+  { href: "/claims", label: "Claims Registry", icon: "📋" },
   { href: "/submit", label: "Submit", icon: "✎" },
   { href: "/review", label: "Review Queue", icon: "☑" },
   { href: "/drift", label: "Drift Radar", icon: "◉" },
-  { href: "/guidelines", label: "Guidelines", icon: "📄" },
-  { href: "/claims", label: "Claims Registry", icon: "📋" },
+  { href: "/settings", label: "Settings", icon: "⚙" },
 ];
-
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
