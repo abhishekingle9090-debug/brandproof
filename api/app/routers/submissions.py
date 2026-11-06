@@ -14,6 +14,7 @@ from ..services.org import get_or_create_org
 from ..services.retrieval import hybrid_search
 from ..services.rule_engine import run_rule_engine
 from ..services.validator import validate_finding
+import asyncio
 
 router = APIRouter()
 
@@ -40,8 +41,6 @@ async def create_submission(
     # 1. Retrieve relevant guideline chunks for the submission text
     query_emb = await embed_query(body.content)
     chunks = await hybrid_search(db, org_id, body.content, query_emb, top_k=5)
-
-       import asyncio
     # 2. Rule engine (sync, instant) + LLM (async) in parallel
     rule_findings = run_rule_engine(body.content, chunks)
     llm_raw = await analyze_with_llm(body.content, chunks)
