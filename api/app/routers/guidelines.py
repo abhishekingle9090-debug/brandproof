@@ -94,5 +94,6 @@ async def search_guidelines(
                 "metadata": r.chunk_metadata,
             }
             for r in results
+            if r.chunk_metadata and r.chunk_metadata.get("rule_id")
         ],
     }

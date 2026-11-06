@@ -25,13 +25,15 @@ export default function ClaimsPage() {
           all.push(...(data.results || []));
         }
       }
-      const seen = new Set();
+            const seen = new Set();
       const deduped = all.filter((c) => {
         if (seen.has(c.chunk_id)) return false;
         seen.add(c.chunk_id);
         return true;
       });
-      setChunks(deduped);
+      // Only show chunks with a rule_id — filters out any accidentally uploaded PDFs
+      const ruleOnly = deduped.filter((c) => !!c.metadata?.rule_id);
+      setChunks(ruleOnly);
       setLoading(false);
     });
   }, []);

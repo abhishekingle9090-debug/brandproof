@@ -22,7 +22,8 @@ export default function GuidelinesPage() {
       });
       if (r.ok) {
         const data = await r.json();
-        setChunks(data.results || []);
+              const filtered = (data.results || []).filter((c: any) => !!c.metadata?.rule_id);
+      setChunks(filtered);
       }
     });
   }, []);
