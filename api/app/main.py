@@ -38,15 +38,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="BrandProof API", lifespan=lifespan)
 
-# CORS — allow the frontend dev server to call the API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
         "http://localhost:3001",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:3001",
+        "https://brandproof-alpha.vercel.app",
     ],
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
