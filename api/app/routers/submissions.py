@@ -17,6 +17,25 @@ from ..services.validator import validate_finding
 import asyncio
 
 router = APIRouter()
+router = APIRouter()
+
+
+def _collapse_substrings(findings: list[dict]) -> list[dict]:
+    """Drop findings whose span is a substring of another finding's span.
+    Example: 'here' inside 'click here' → keep only 'click here'."""
+    spans = [(f.get("flagged_span") or "").lower().strip() for f in findings]
+    keep = []
+    for i, f in enumerate(findings):
+        s = spans[i]
+        if not s:
+            keep.append(f)
+            continue
+        is_substring = any(
+            s != other and s in other for j, other in enumerate(spans) if j != i and other
+        )
+        if not is_substring:
+            keep.append(f)
+    return keep
 
 
 class SubmissionIn(BaseModel):
@@ -41,13 +60,28 @@ async def create_submission(
     # 1. Retrieve relevant guideline chunks for the submission text
     query_emb = await embed_query(body.content)
     chunks = await hybrid_search(db, org_id, body.content, query_emb, top_k=5)
-    # 2. Rule engine (sync, instant) + LLM (async) in parallel
+       # 2. Deterministic rule engine
     rule_findings = run_rule_engine(body.content, chunks)
+
+    # 3. LLM analysis, then citation validation on each finding
     llm_raw = await analyze_with_llm(body.content, chunks)
     llm_findings = [validate_finding(f) for f in llm_raw]
-    # 4. Persist everything
+
+    # 4. Deduplicate — rule findings take priority over LLM findings on the same span
+    rule_spans = {
+        (f.get("flagged_span") or "").lower().strip()
+        for f in rule_findings
+        if f.get("flagged_span")
+    }
+    llm_deduped = [
+        f for f in llm_findings
+        if (f.get("flagged_span") or "").lower().strip() not in rule_spans
+    ]
+    combined = _collapse_substrings(rule_findings + llm_deduped)
+
+    # 5. Persist
     stored = []
-    for f in rule_findings + llm_findings:
+    for f in combined:
         row = Finding(
             submission_id=submission.id,
             verdict=f.get("verdict", "UNVERIFIABLE"),

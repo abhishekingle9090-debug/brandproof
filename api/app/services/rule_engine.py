@@ -127,10 +127,17 @@ def check_accessibility(submission_text: str, source_chunk_id) -> list[dict]:
             })
 
     # AC-003: Vague link text
-    vague_links = ["click here", "read more", "learn more", "find out more", "here"]
+       # AC-003: Vague link text — check longest first, skip if already covered
+    vague_links = sorted(
+        ["click here", "read more", "learn more", "find out more", "here"],
+        key=len,
+        reverse=True,
+    )
     text_lower = submission_text.lower()
+    matched_spans: list[str] = []
     for link in vague_links:
-        if link in text_lower:
+        if link in text_lower and not any(link in m for m in matched_spans):
+            matched_spans.append(link)
             findings.append({
                 "verdict": "CONTRADICTED",
                 "risk_tier": "LOW",
