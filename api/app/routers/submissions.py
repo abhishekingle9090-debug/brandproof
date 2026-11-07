@@ -1,4 +1,5 @@
 from uuid import UUID
+import asyncio
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -61,10 +62,11 @@ async def create_submission(
     query_emb = await embed_query(body.content)
     chunks = await hybrid_search(db, org_id, body.content, query_emb, top_k=5)
        # 2. Deterministic rule engine
-    rule_findings = run_rule_engine(body.content, chunks)
-
-    # 3. LLM analysis, then citation validation on each finding
-    llm_raw = await analyze_with_llm(body.content, chunks)
+    # 2 & 3. Rule engine + LLM in parallel
+    rule_findings, llm_raw = await asyncio.gather(
+        asyncio.to_thread(run_rule_engine, body.content, chunks),
+        analyze_with_llm(body.content, chunks),
+    )
     llm_findings = [validate_finding(f) for f in llm_raw]
 
     # 4. Deduplicate — rule findings take priority over LLM findings on the same span
